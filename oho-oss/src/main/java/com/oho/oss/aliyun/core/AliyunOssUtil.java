@@ -4,9 +4,11 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.common.utils.BinaryUtil;
 import com.aliyun.oss.model.*;
 import com.oho.common.utils.BeanUtils;
+import com.oho.common.utils.JsonUtils;
 import com.oho.common.utils.date.DateUtils;
 import com.oho.oss.aliyun.core.model.DownloadCondition;
 import com.oho.oss.aliyun.core.model.ListObjectCondition;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,7 @@ import java.util.Map;
  * @author MENGJIAO
  * @createDate 2023-04-27 9:29
  */
+@Slf4j
 @Component
 public class AliyunOssUtil {
 
@@ -129,7 +132,9 @@ public class AliyunOssUtil {
         // 设置该属性可以返回response。如果不设置，则返回的response为空。
         putObjectRequest.setProcess("true");
         // 上传字符串。
-        return ossClient.putObject(putObjectRequest);
+        PutObjectResult putObjectResult = ossClient.putObject(putObjectRequest);
+        log.info("OSS - Aliyun - 字符串上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(putObjectResult));
+        return putObjectResult;
     }
 
     /**
@@ -141,7 +146,9 @@ public class AliyunOssUtil {
         // 设置该属性可以返回response。如果不设置，则返回的response为空。
         putObjectRequest.setProcess("true");
         // 上传字节数组。
-        return ossClient.putObject(putObjectRequest);
+        PutObjectResult putObjectResult = ossClient.putObject(putObjectRequest);
+        log.info("OSS - Aliyun - Byte数组上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(putObjectResult));
+        return putObjectResult;
     }
 
     /**
@@ -154,7 +161,9 @@ public class AliyunOssUtil {
         // 设置该属性可以返回response。如果不设置，则返回的response为空。
         putObjectRequest.setProcess("true");
         // 上传网络流。
-        return ossClient.putObject(putObjectRequest);
+        PutObjectResult putObjectResult = ossClient.putObject(putObjectRequest);
+        log.info("OSS - Aliyun - 网络流上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(putObjectResult));
+        return putObjectResult;
     }
 
     /**
@@ -166,7 +175,9 @@ public class AliyunOssUtil {
         // 设置该属性可以返回response。如果不设置，则返回的response为空。
         putObjectRequest.setProcess("true");
         // 上传文件流。
-        return ossClient.putObject(putObjectRequest);
+        PutObjectResult putObjectResult = ossClient.putObject(putObjectRequest);
+        log.info("OSS - Aliyun - 文件流上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(putObjectResult));
+        return putObjectResult;
     }
 
     /**
@@ -178,7 +189,9 @@ public class AliyunOssUtil {
         // 设置该属性可以返回response。如果不设置，则返回的response为空。
         putObjectRequest.setProcess("true");
         // 上传文件。
-        return ossClient.putObject(putObjectRequest);
+        PutObjectResult putObjectResult = ossClient.putObject(putObjectRequest);
+        log.info("OSS - Aliyun - 文件上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(putObjectResult));
+        return putObjectResult;
     }
 
     /**
@@ -201,6 +214,7 @@ public class AliyunOssUtil {
             appendObjectRequest.setInputStream(contents.get(i));
             appendObjectResult = ossClient.appendObject(appendObjectRequest);
         }
+        log.info("OSS - Aliyun - 追加上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(appendObjectResult));
         return appendObjectResult;
     }
 
@@ -253,13 +267,15 @@ public class AliyunOssUtil {
         CompleteMultipartUploadRequest completeMultipartUploadRequest =
                 new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partETags);
         // 完成分片上传。
-        return ossClient.completeMultipartUpload(completeMultipartUploadRequest);
+        CompleteMultipartUploadResult completeMultipartUploadResult = ossClient.completeMultipartUpload(completeMultipartUploadRequest);
+        log.info("OSS - Aliyun - 分片上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(completeMultipartUploadResult));
+        return completeMultipartUploadResult;
     }
 
     /**
      * 断点续传上传
      */
-    public void checkpointUpload(String bucketName, String objectName, String contentType, String uploadFile) throws Throwable {
+    public UploadFileResult checkpointUpload(String bucketName, String objectName, String contentType, String uploadFile) throws Throwable {
         ObjectMetadata meta = new ObjectMetadata();
         // 指定上传的内容类型。
         meta.setContentType(contentType);
@@ -287,7 +303,9 @@ public class AliyunOssUtil {
         // 设置上传回调，参数为Callback类型。
         //uploadFileRequest.setCallback("yourCallbackEvent");
         // 断点续传上传。
-        ossClient.uploadFile(uploadFileRequest);
+        UploadFileResult uploadFileResult = ossClient.uploadFile(uploadFileRequest);
+        log.info("OSS - Aliyun - 断点续传上传 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, JsonUtils.toJson(uploadFileResult));
+        return uploadFileResult;
     }
 
     // ============================== 下载 ==============================
@@ -301,6 +319,7 @@ public class AliyunOssUtil {
         InputStream objectContent = ossObject.getObjectContent();
         // ossObject对象使用完毕后必须关闭，否则会造成连接泄漏，导致请求无连接可用，程序无法正常工作。
         ossObject.close();
+        log.info("OSS - Aliyun - 流式下载 - 时间：[{}], 文件：[{} - {}]", DateUtils.now(), bucketName, objectName);
         return objectContent;
     }
 
@@ -309,7 +328,9 @@ public class AliyunOssUtil {
      */
     public ObjectMetadata download(String bucketName, String objectName, String downloadFilePath) throws Throwable {
         // 下载OSS文件到本地文件。如果指定的本地文件存在会覆盖，不存在则新建。
-        return ossClient.getObject(new GetObjectRequest(bucketName, objectName), new File(downloadFilePath));
+        ObjectMetadata downloadResult = ossClient.getObject(new GetObjectRequest(bucketName, objectName), new File(downloadFilePath));
+        log.info("OSS - Aliyun - 下载到本地文件 - 时间：[{}], 文件：[{} - {}], 本地路径：[{}]", DateUtils.now(), bucketName, objectName, downloadFilePath);
+        return downloadResult;
     }
 
     /**
@@ -322,7 +343,9 @@ public class AliyunOssUtil {
         // 获取0~999字节范围内的数据，包括0和999，共1000个字节的数据。如果指定的范围无效（比如开始或结束位置的指定值为负数，或指定值大于文件大小），则下载整个文件。
         getObjectRequest.setRange(0, 999);
         // 范围下载。
-        return ossClient.getObject(getObjectRequest).getObjectContent();
+        InputStream rangeDownloadResult = ossClient.getObject(getObjectRequest).getObjectContent();
+        log.info("OSS - Aliyun - 范围下载 - 时间：[{}], 文件：[{} - {}], 本地路径：[{}]", DateUtils.now(), bucketName, objectName, downloadFilePath);
+        return rangeDownloadResult;
     }
 
     /**
@@ -340,9 +363,9 @@ public class AliyunOssUtil {
         // 开启断点续传下载，默认关闭。
         downloadFileRequest.setEnableCheckpoint(true);
         // 下载文件。
-        ossClient.downloadFile(downloadFileRequest);
-        // 下载文件。
-        return ossClient.downloadFile(downloadFileRequest);
+        DownloadFileResult downloadFileResult = ossClient.downloadFile(downloadFileRequest);
+        log.info("OSS - Aliyun - 断点续传下载 - 时间：[{}], 文件：[{} - {}], 本地路径：[{}]", DateUtils.now(), bucketName, objectName, downloadFilePath);
+        return downloadFileResult;
     }
 
     /**
@@ -353,7 +376,8 @@ public class AliyunOssUtil {
         // 设置限定条件。
         BeanUtils.copyProperties(condition, request);
         // 下载OSS文件到本地文件。
-        ossClient.getObject(request, new File(downloadFilePath));
+        ObjectMetadata conditionalDownloadResult = ossClient.getObject(request, new File(downloadFilePath));
+        log.info("OSS - Aliyun - 限定条件下载 - 时间：[{}], 文件：[{} - {}], 本地路径：[{}]", DateUtils.now(), bucketName, objectName, downloadFilePath);
     }
 
     // ============================== 文件管理 ==============================
@@ -405,7 +429,9 @@ public class AliyunOssUtil {
         objectMetadata.setHeader("x-oss-storage-class", storageClass);
         request.setNewObjectMetadata(objectMetadata);
         // 更改文件存储类型。
-        return ossClient.copyObject(request);
+        CopyObjectResult changeStorageClass = ossClient.copyObject(request);
+        log.info("OSS - Aliyun - 转换文件存储类型 - 时间：[{}], 文件：[{} - {}], 存储类型：[{}]", DateUtils.now(), bucketName, objectName, storageClass);
+        return changeStorageClass;
     }
 
     /**
@@ -431,6 +457,7 @@ public class AliyunOssUtil {
         ossClient.copyObject(bucketName, oldObjectName, bucketName, newObjectName);
         // 删除原文件。
         ossClient.deleteObject(bucketName, oldObjectName);
+        log.info("OSS - Aliyun - 重命名文件 - 时间：[{}], 文件：[{} - {}], 新文件名：[{}]", DateUtils.now(), bucketName, oldObjectName, newObjectName);
     }
 
     /**
@@ -439,5 +466,6 @@ public class AliyunOssUtil {
      */
     public void deleteObject(String bucketName, String objectName) {
         ossClient.deleteObject(bucketName, objectName);
+        log.info("OSS - Aliyun - 删除文件 - 时间：[{}], 文件：[{} - {}]", DateUtils.now(), bucketName, objectName);
     }
 }

@@ -4,6 +4,7 @@ import com.oho.common.enums.YesNoEnum;
 import com.oho.common.exception.Asserts;
 import com.oho.common.utils.CollectionUtils;
 import com.oho.common.utils.StringUtils;
+import com.oho.common.utils.date.DateUtils;
 import com.oho.mail.general.model.MailContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,22 +43,22 @@ public class MailUtils {
      */
     private void checkMailContent(MailContent mailContent) {
         if (StringUtils.isBlank(mailContent.getFrom())) {
-            log.error("邮件错误：发件人信息不能为空");
+            log.error("邮件服务 - 通用协议邮件 - 邮件格式错误：发件人信息不能为空");
             Asserts.fail("邮件错误：发件人信息不能为空");
         }
 
         if (CollectionUtils.isEmpty(mailContent.getTo())) {
-            log.error("邮件错误：收件人不能为空");
+            log.error("邮件服务 - 通用协议邮件 - 邮件格式错误：收件人不能为空");
             Asserts.fail("邮件错误：收件人不能为空");
         }
 
         if (StringUtils.isBlank(mailContent.getSubject())) {
-            log.error("邮件错误：邮件标题不能为空");
+            log.error("邮件服务 - 通用协议邮件 - 邮件格式错误：邮件标题不能为空");
             Asserts.fail("邮件错误：邮件标题不能为空");
         }
 
         if (StringUtils.isBlank(mailContent.getContent())) {
-            log.error("邮件错误：邮件内容不能为空");
+            log.error("邮件服务 - 通用协议邮件 - 邮件格式错误：邮件内容不能为空");
             Asserts.fail("邮件错误：邮件内容不能为空");
         }
     }
@@ -95,9 +96,10 @@ public class MailUtils {
             }
             mailSender.send(message);
         } catch (Exception e) {
-            log.error("邮件发送失败 ： [{}] - [{}]", e.getMessage(), e.getLocalizedMessage());
+            log.error("邮件服务 - 通用协议邮件 - 邮件发送失败 ： [{}] - [{}]", e.getMessage(), e.getLocalizedMessage());
             return Boolean.FALSE;
         }
+        log.info("邮件服务 - 通用协议邮件 - 邮件发送成功 ：记录时间 [{}] ", DateUtils.now());
         return Boolean.TRUE;
     }
 

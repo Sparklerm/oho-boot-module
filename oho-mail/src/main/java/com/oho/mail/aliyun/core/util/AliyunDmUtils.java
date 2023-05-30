@@ -1,10 +1,13 @@
-package com.oho.mail.aliyun.core;
+package com.oho.mail.aliyun.core.util;
 
 import com.aliyun.dm20151123.models.*;
 import com.oho.common.enums.YesNoEnum;
+import com.oho.common.utils.JsonUtils;
+import com.oho.common.utils.date.DateUtils;
 import com.oho.mail.aliyun.core.model.content.DmBatchSendMail;
 import com.oho.mail.aliyun.core.model.content.DmSingleSendMail;
 import com.oho.mail.aliyun.core.model.task.DmTaskQueryDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -15,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
  * @author MENGJIAO
  * @createDate 2023-05-04 16:46
  */
+@Slf4j
 @Component
 public class AliyunDmUtils {
 
@@ -50,7 +54,9 @@ public class AliyunDmUtils {
                 .setReplyAddressAlias(dmSingleSendMail.getReplyAddressAlias())
                 // 打开数据跟踪功能
                 .setClickTrace(dmSingleSendMail.getClickTrace());
-        return client.singleSendMail(singleSendMailRequest);
+        SingleSendMailResponse singleSendMailResponse = client.singleSendMail(singleSendMailRequest);
+        log.info("邮件服务 - AliyunDM - 发送单条邮件 - 记录时间 : [{}], 结果：[{}]", DateUtils.now(), JsonUtils.toJson(singleSendMailResponse));
+        return singleSendMailResponse;
     }
 
     /**
@@ -74,7 +80,9 @@ public class AliyunDmUtils {
                 .setReplyAddressAlias(dmBatchSendMail.getReplyAddressAlias())
                 // 打开数据跟踪功能
                 .setClickTrace(dmBatchSendMail.getClickTrace());
-        return client.batchSendMail(batchSendMailRequest);
+        BatchSendMailResponse batchSendMailResponse = client.batchSendMail(batchSendMailRequest);
+        log.info("邮件服务 - AliyunDM - 批量发送邮件 - 记录时间 : [{}], 结果：[{}]", DateUtils.now(), JsonUtils.toJson(batchSendMailResponse));
+        return batchSendMailResponse;
     }
 
     // ===========================  服务参数  ===========================

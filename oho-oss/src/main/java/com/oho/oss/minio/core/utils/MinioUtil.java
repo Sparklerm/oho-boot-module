@@ -5,6 +5,7 @@ import cn.hutool.crypto.digest.MD5;
 import com.oho.common.exception.Asserts;
 import com.oho.common.utils.CollectionUtils;
 import com.oho.common.utils.StringUtils;
+import com.oho.common.utils.date.DateUtils;
 import com.oho.oss.minio.autoconfigure.properties.MinioProperties;
 import com.oho.oss.minio.autoconfigure.properties.NginxProperties;
 import io.minio.*;
@@ -200,7 +201,9 @@ public class MinioUtil {
         Asserts.fail(multipartFile.getSize() <= minioProperties.getMaxUploadFileSize(), "minio.upload.file.is.too.big");
         Asserts.fail(bucketExists(bucketName), "minio.bucket.is.not.exist");
         String objectName = this.getFileMd5(multipartFile);
-        return this.putObject(bucketName, multipartFile.getInputStream(), objectName, multipartFile.getContentType());
+        String putObjectResult = this.putObject(bucketName, multipartFile.getInputStream(), objectName, multipartFile.getContentType());
+        log.info("OSS - Minio - 文件上传 - 时间：[{}], 文件：[{} -{}], 结果：[{}]", DateUtils.now(), bucketName, objectName, putObjectResult);
+        return putObjectResult;
     }
 
     /**
@@ -224,7 +227,9 @@ public class MinioUtil {
                         .stream(stream, stream.available(), -1)
                         .build()
         );
-        return objectWriteResponse.object();
+        String putObjectResult = objectWriteResponse.object();
+        log.info("OSS - Minio - InputStream文件上传 - 时间：[{}], 文件：[{} -{}], 结果：[{}]", DateUtils.now(), bucketName, objectName, putObjectResult);
+        return putObjectResult;
     }
 
     /**
@@ -240,11 +245,13 @@ public class MinioUtil {
         if (flag) {
             StatObjectResponse statObject = statObject(bucketName, objectName);
             if (statObject != null && statObject.size() > 0) {
-                return minioClient.getObject(GetObjectArgs.builder()
+                GetObjectResponse objectResponse = minioClient.getObject(GetObjectArgs.builder()
                         .bucket(bucketName)
                         .object(objectName)
                         .build()
                 );
+                log.info("OSS - Minio - 文件流下载 - 时间：[{}], 文件：[{} -{}]", DateUtils.now(), bucketName, objectName);
+                return objectResponse;
             }
         }
         return null;
@@ -265,13 +272,15 @@ public class MinioUtil {
         if (flag) {
             StatObjectResponse statObject = statObject(bucketName, objectName);
             if (statObject != null && statObject.size() > 0) {
-                return minioClient.getObject(GetObjectArgs.builder()
+                GetObjectResponse getObjectResponse = minioClient.getObject(GetObjectArgs.builder()
                         .bucket(bucketName)
                         .object(objectName)
                         .offset(offset)
                         .length(length)
                         .build()
                 );
+                log.info("OSS - Minio - 文件断点下载 - 时间：[{}], 文件：[{} -{}]", DateUtils.now(), bucketName, objectName);
+                return getObjectResponse;
             }
         }
         return null;
@@ -289,6 +298,7 @@ public class MinioUtil {
         boolean flag = bucketExists(bucketName);
         if (flag) {
             minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucketName).object(objectName).build());
+            log.info("OSS - Minio - 删除文件 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, objectName);
             return true;
         }
         return false;
@@ -345,6 +355,7 @@ public class MinioUtil {
             String targetAddress = nginxProperties.getPrefixNginxUrl() + minioProperties.getNginxLoadUrl();
             url = url.replace(sourceAddress, targetAddress);
         }
+        log.info("OSS - Minio - 生成GET请求预览URL - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, url);
         return url;
     }
 
@@ -370,6 +381,7 @@ public class MinioUtil {
                     .build()
             );
         }
+        log.info("OSS - Minio - 生成PUT请求预览URL - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, url);
         return url;
     }
 
@@ -384,7 +396,9 @@ public class MinioUtil {
     public StatObjectResponse statObject(String bucketName, String objectName) {
         boolean flag = bucketExists(bucketName);
         if (flag) {
-            return minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+            StatObjectResponse statObjectResponse = minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+            log.info("OSS - Minio - 获取对象的元数据 - 时间：[{}], 文件：[{} - {}], 结果：[{}]", DateUtils.now(), bucketName, objectName, statObjectResponse);
+            return statObjectResponse;
         }
         return null;
     }
@@ -408,6 +422,7 @@ public class MinioUtil {
                     .build()
             );
         }
+        log.info("OSS - Minio - 获取文件访问路径 - 时间：[{}], 文件：[{} - {}] ， 结果：[{}]", DateUtils.now(), bucketName, objectName, url);
         return url;
     }
 
@@ -449,6 +464,7 @@ public class MinioUtil {
             servletOutputStream.flush();
             file.close();
             servletOutputStream.close();
+            log.info("OSS - Minio - 文件下载 - 时间：[{}], 文件：[{} - {}]", DateUtils.now(), bucketName, objectName);
         } catch (Exception e) {
             log.error(String.format("下载文件:%s异常", objectName), e);
         }

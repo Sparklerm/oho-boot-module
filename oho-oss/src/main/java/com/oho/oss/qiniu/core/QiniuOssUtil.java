@@ -1,6 +1,7 @@
 package com.oho.oss.qiniu.core;
 
 import com.oho.common.utils.JsonUtils;
+import com.oho.common.utils.date.DateUtils;
 import com.oho.oss.qiniu.autoconfigure.properties.QiniuOssProperties;
 import com.oho.oss.qiniu.core.enums.GranularityEnum;
 import com.qiniu.cdn.CdnManager;
@@ -17,6 +18,7 @@ import com.qiniu.storage.model.FetchRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.qiniu.util.StringMap;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +32,7 @@ import java.util.*;
  * @author MENGJIAO
  * @createDate 2023 -04-27 13:20
  */
+@Slf4j
 @Component
 public class QiniuOssUtil {
     @Autowired
@@ -48,7 +51,9 @@ public class QiniuOssUtil {
      * @return the upload token
      */
     public String getUploadToken(String bucketName) {
-        return auth.uploadToken(bucketName);
+        String uploadToken = auth.uploadToken(bucketName);
+        log.info("OSS - Qiniu - 获取上传Token - 时间：[{}], 结果：[{}]", DateUtils.now(), uploadToken);
+        return uploadToken;
     }
 
     /**
@@ -59,7 +64,9 @@ public class QiniuOssUtil {
      * @return the cover token
      */
     public String getCoverToken(String bucketName, String key) {
-        return auth.uploadToken(bucketName, key);
+        String coverToken = auth.uploadToken(bucketName, key);
+        log.info("OSS - Qiniu - 获取覆盖Token - 时间：[{}], 结果：[{}]", DateUtils.now(), coverToken);
+        return coverToken;
     }
 
     /**
@@ -68,7 +75,9 @@ public class QiniuOssUtil {
      * @return the auth
      */
     public Auth getAuth() {
-        return Auth.create(qiniuOssProperties.getAccessKey(), qiniuOssProperties.getSecretKey());
+        Auth authRes = Auth.create(qiniuOssProperties.getAccessKey(), qiniuOssProperties.getSecretKey());
+        log.info("OSS - Qiniu - 获取Auth - 时间：[{}], 结果：[{}]", DateUtils.now(), authRes);
+        return authRes;
     }
 
     // ==================== Bucket（存储空间）操作 ====================
@@ -90,6 +99,7 @@ public class QiniuOssUtil {
         // 执行文件上传
         Response response = uploadManager.put(localFilePath, key, upToken);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 上传本地文件 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -108,6 +118,7 @@ public class QiniuOssUtil {
         // 执行文件上传
         Response response = uploadManager.put(uploadBytes, key, upToken);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 字节流上传文件 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -128,6 +139,7 @@ public class QiniuOssUtil {
         // 执行文件上传
         Response response = uploadManager.put(uploadStream, key, upToken, params, mime);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 数据流上传文件 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -141,11 +153,12 @@ public class QiniuOssUtil {
      * @throws QiniuException the qiniu exception
      */
     public DefaultPutRet coverFile(String bucketName, String key, String localFilePath) throws QiniuException {
-        // 获取上传的Token
-        String upToken = getCoverToken(bucketName, key);
+        // 获取文件覆盖的Token
+        String coverToken = getCoverToken(bucketName, key);
         // 执行文件上传
-        Response response = uploadManager.put(localFilePath, key, upToken);
+        Response response = uploadManager.put(localFilePath, key, coverToken);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 上传本地文件覆盖 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -160,10 +173,11 @@ public class QiniuOssUtil {
      */
     public DefaultPutRet coverFile(String bucketName, String key, byte[] uploadBytes) throws QiniuException {
         // 获取上传的Token
-        String upToken = getCoverToken(bucketName, key);
+        String coverToken = getCoverToken(bucketName, key);
         // 执行文件上传
-        Response response = uploadManager.put(uploadBytes, key, upToken);
+        Response response = uploadManager.put(uploadBytes, key, coverToken);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 上传字节流覆盖文件 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -184,6 +198,7 @@ public class QiniuOssUtil {
         // 执行文件上传
         Response response = uploadManager.put(uploadStream, key, upToken, params, mime);
         //解析上传成功的结果
+        log.info("OSS - Qiniu - 上传数据流覆盖文件 - 时间：[{}], 文件：[{} - {}] 结果：[{}]", DateUtils.now(), bucketName, key, response.bodyString());
         return JsonUtils.toObj(response.bodyString(), DefaultPutRet.class);
     }
 
@@ -198,6 +213,7 @@ public class QiniuOssUtil {
      */
     public String getPublicFileUrl(String key) throws IOException {
         DownloadUrl url = new DownloadUrl(qiniuOssProperties.getDomain(), qiniuOssProperties.isUseHttps(), key);
+        log.info("OSS - Qiniu - 公开空间文件下载链接 - 时间：[{}], 文件：[{} - {}] 下载链接：[{}]", DateUtils.now(), qiniuOssProperties.getBucketName(), key, url.buildURL());
         return url.buildURL();
     }
 
@@ -212,6 +228,7 @@ public class QiniuOssUtil {
     public String getPrivateFileUrl(String key, long expireInSeconds) throws IOException {
         DownloadUrl url = new DownloadUrl(qiniuOssProperties.getDomain(), qiniuOssProperties.isUseHttps(), key);
         // 带有效期
+        log.info("OSS - Qiniu - 私有空间文件下载链接 - 时间：[{}], 文件：[{} - {}] 下载链接：[{}]", DateUtils.now(), qiniuOssProperties.getBucketName(), key, url.buildURL(getAuth(), expireInSeconds));
         return url.buildURL(getAuth(), expireInSeconds);
     }
 
@@ -227,7 +244,9 @@ public class QiniuOssUtil {
      */
     public FileInfo getFileInfo(String bucketName, String key) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
-        return bucketManager.stat(bucketName, key);
+        FileInfo fileInfo = bucketManager.stat(bucketName, key);
+        log.info("OSS - Qiniu - 获取文件信息 - 时间：[{}], 文件：[{} - {}] 信息：[{}]", DateUtils.now(), bucketName, key, fileInfo.toString());
+        return fileInfo;
     }
 
     /**
@@ -241,6 +260,7 @@ public class QiniuOssUtil {
     public void changeFileType(String bucketName, String key, String newMimeType) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         bucketManager.changeMime(bucketName, key, newMimeType);
+        log.info("OSS - Qiniu - 修改文件类型 - 时间：[{}], 文件：[{} - {}] 新类型：[{}]", DateUtils.now(), bucketName, key, newMimeType);
     }
 
     /**
@@ -255,6 +275,7 @@ public class QiniuOssUtil {
     public void moveFile(String bucketName, String key, String toBucketName, String toKey) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         bucketManager.move(bucketName, key, toBucketName, toKey);
+        log.info("OSS - Qiniu - 移动或重命名文件 - 时间：[{}], 文件：[{} - {}] 移动到/重命名为：[{} - {}]", DateUtils.now(), bucketName, key, toBucketName, toKey);
     }
 
     /**
@@ -269,6 +290,7 @@ public class QiniuOssUtil {
     public void copyFile(String bucketName, String key, String toBucketName, String toKey) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         bucketManager.copy(bucketName, key, toBucketName, toKey);
+        log.info("OSS - Qiniu - 复制文件副本 - 时间：[{}], 文件：[{} - {}] 复制到：[{} - {}]", DateUtils.now(), bucketName, key, toBucketName, toKey);
     }
 
     /**
@@ -281,6 +303,7 @@ public class QiniuOssUtil {
     public void deleteFile(String bucketName, String key) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         bucketManager.delete(bucketName, key);
+        log.info("OSS - Qiniu - 删除空间中的文件 - 时间：[{}], 文件：[{} - {}]", DateUtils.now(), bucketName, key);
     }
 
     /**
@@ -296,6 +319,7 @@ public class QiniuOssUtil {
     public void deleteAfterDays(String bucketName, String key, int days) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         bucketManager.deleteAfterDays(bucketName, key, days);
+        log.info("OSS - Qiniu - 设置或更新文件的生存时间 - 时间：[{}], 文件：[{} - {}] 生存时间：[{}]", DateUtils.now(), bucketName, key, days);
     }
 
     /**
@@ -317,6 +341,7 @@ public class QiniuOssUtil {
             FileInfo[] items = fileListIterator.next();
             fileInfoList.addAll(Arrays.asList(items));
         }
+        log.info("OSS - Qiniu - 获取空间文件列表 - 时间：[{}], 文件：[{} - {}] 文件列表大小：[{}]", DateUtils.now(), bucketName, prefix, fileInfoList.size());
         return fileInfoList;
     }
 
@@ -332,7 +357,9 @@ public class QiniuOssUtil {
     public FetchRet fetch(String bucketName, String remoteSrcUrl, String key) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
         //抓取网络资源到空间
-        return bucketManager.fetch(remoteSrcUrl, bucketName, key);
+        FetchRet fetchRet = bucketManager.fetch(remoteSrcUrl, bucketName, key);
+        log.info("OSS - Qiniu - 抓取网络资源到空间 - 时间：[{}], 目标资源：[{}], 目标存储文件：[{} - {}] 抓取结果：[{}]", DateUtils.now(), remoteSrcUrl, bucketName, key, JsonUtils.toJson(fetchRet));
+        return fetchRet;
     }
 
     // ==================== 资源管理批量操作 ====================
@@ -352,6 +379,7 @@ public class QiniuOssUtil {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         batchOperations.addStatOps(bucketName, keys);
         Response response = bucketManager.batch(batchOperations);
+        log.info("OSS - Qiniu - 批量获取文件信息 - 时间：[{}], 文件：[{} - {}]", DateUtils.now(), bucketName, Arrays.toString(keys));
         return Arrays.asList(response.jsonToObject(BatchStatus[].class));
     }
 
@@ -374,6 +402,7 @@ public class QiniuOssUtil {
             batchOperations.addChgmOp(bucketName, key, newMimeType);
         }
         Response response = bucketManager.batch(batchOperations);
+        log.info("OSS - Qiniu - 批量修改文件类型 - 时间：[{}], 文件：[{} - {}], 修改结果：[{}]", DateUtils.now(), bucketName, keyMimeMap, response.bodyString());
         return Arrays.asList(response.jsonToObject(BatchStatus[].class));
     }
 
@@ -393,6 +422,7 @@ public class QiniuOssUtil {
         BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
         batchOperations.addDeleteOp(bucketName, keyList);
         Response response = bucketManager.batch(batchOperations);
+        log.info("OSS - Qiniu - 批量删除文件 - 时间：[{}], 文件：[{} - {}] 删除结果：[{}]", DateUtils.now(), bucketName, Arrays.toString(keyList), JsonUtils.toJson(response));
         return Arrays.asList(response.jsonToObject(BatchStatus[].class));
     }
 
@@ -415,6 +445,7 @@ public class QiniuOssUtil {
             batchOperations.addMoveOp(bucketName, key, toBucketName, key + "_move");
         }
         Response response = bucketManager.batch(batchOperations);
+        log.info("OSS - Qiniu - 批量移动或重命名文件 - 时间：[{}], 文件：[{} - {}], 重命名/移动到：[{}], 移动结果：[{}]", DateUtils.now(), bucketName, Arrays.toString(keyList), toBucketName, JsonUtils.toJson(response));
         return Arrays.asList(response.jsonToObject(BatchStatus[].class));
     }
 
@@ -437,6 +468,7 @@ public class QiniuOssUtil {
             batchOperations.addCopyOp(bucketName, key, toBucketName, key + "_copy");
         }
         Response response = bucketManager.batch(batchOperations);
+        log.info("OSS - Qiniu - 批量复制文件 - 时间：[{}], 文件：[{} - {}], 复制到：[{}], 复制结果：[{}]", DateUtils.now(), bucketName, Arrays.toString(keyList), toBucketName, JsonUtils.toJson(response));
         return Arrays.asList(response.jsonToObject(BatchStatus[].class));
     }
 
@@ -452,7 +484,9 @@ public class QiniuOssUtil {
      */
     public Response batchPrefetchFile(String bucketName, String key) throws QiniuException {
         BucketManager bucketManager = new BucketManager(getAuth(), configuration);
-        return bucketManager.prefetch(bucketName, key);
+        Response prefetch = bucketManager.prefetch(bucketName, key);
+        log.info("OSS - Qiniu - 更新镜像存储空间中文件内容 - 时间：[{}], 文件：[{} - {}], 更新结果：[{}]", DateUtils.now(), bucketName, key, JsonUtils.toJson(prefetch));
+        return prefetch;
     }
 
     // ==================== CDN相关功能 ====================

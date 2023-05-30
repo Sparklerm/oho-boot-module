@@ -1,7 +1,7 @@
 package com.oho.mail.aliyun.autoconfigure;
 
 import com.oho.mail.aliyun.autoconfigure.properties.AliyunDmProperties;
-import com.oho.mail.aliyun.core.AliyunDmUtils;
+import com.oho.mail.aliyun.core.util.AliyunDmUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
