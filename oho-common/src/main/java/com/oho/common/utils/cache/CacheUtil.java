@@ -3,6 +3,9 @@ package com.oho.common.utils.cache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.oho.common.utils.JsonUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -14,10 +17,27 @@ import java.util.concurrent.TimeUnit;
  * </p>
  * 默认配置：最大缓存条数：2000，过期时间：7200秒
  * 使用时，可通过 {@link #instance(int, int, TimeUnit)} 方法初始化配置
+ * </P>
+ * initialCapacity=[integer]: 初始的缓存空间大小
+ * maximumSize=[long]: 缓存的最大条数
+ * maximumWeight=[long]: 缓存的最大权重
+ * expireAfterAccess=[duration]: 最后一次写入或访问后经过固定时间过期
+ * expireAfterWrite=[duration]: 最后一次写入后经过固定时间过期
+ * refreshAfterWrite=[duration]: 创建缓存或者最近一次更新缓存后经过固定的时间间隔，刷新缓存
+ * weakKeys: 打开key的弱引用
+ * weakValues：打开value的弱引用
+ * softValues：打开value的软引用
+ * recordStats：开发统计功能
+ * 注意：
+ * expireAfterWrite和expireAfterAccess同事存在时，以expireAfterWrite为准。
+ * maximumSize和maximumWeight不可以同时使用
+ * weakValues和softValues不可以同时使用
  *
  * @author MENGJIAO
  * @createDate 2023-05-30 12:13
  */
+@Slf4j
+@Component
 public class CacheUtil {
 
     /**
@@ -41,11 +61,16 @@ public class CacheUtil {
      */
     public static void instance(int maxiMumSize, int duration, TimeUnit timeUnit) {
         cache = Caffeine.newBuilder()
+                // 初始化缓存空间大小
+                .initialCapacity(100)
                 // 设置最大缓存条数
                 .maximumSize(maxiMumSize)
-                // 设置写入后的过期时间
+                // 设置写入后的默认过期时间
                 .expireAfterWrite(duration, timeUnit)
+                // 设置缓存的移除通知
+                .removalListener((key, value, cause) -> log.info("key: [{}], value: [{}], 删除原因: [{}]", key, value, cause))
                 .build();
+        log.info("Caffeine - 缓存初始化 - 最大缓存条数: [{}], 过期时间: [{}], 时间单位: [{}]", maxiMumSize, duration, timeUnit);
     }
 
     /**
@@ -56,10 +81,7 @@ public class CacheUtil {
      */
     public static void put(String key, Object value) {
         cache.put(key, value);
-    }
-
-    public static void put(String key, Object value, long duration, TimeUnit unit) {
-        cache.put(key, value);
+        log.info("Caffeine - 缓存插入 - key: [{}], value: [{}]", key, value);
     }
 
     /**
@@ -73,12 +95,13 @@ public class CacheUtil {
     }
 
     /**
-     * 删除缓存
+     * 移除缓存
      *
      * @param key 缓存键
      */
     public static void remove(String key) {
         cache.invalidate(key);
+        log.info("Caffeine - 缓存移除 - key: [{}]", key);
     }
 
     /**
@@ -95,6 +118,7 @@ public class CacheUtil {
      */
     public static void putAll(Map<String, Object> map) {
         cache.putAll(map);
+        log.info("Caffeine - 缓存批量插入 - map: [{}]", JsonUtils.toJson(map));
     }
 
     /**
@@ -105,6 +129,7 @@ public class CacheUtil {
     public static void putAllAsync(Map<String, Object> map) {
         ConcurrentMap<String, Object> concurrentMap = cache.asMap();
         concurrentMap.putAll(map);
+        log.info("Caffeine - 缓存异步批量插入 - map: [{}]", JsonUtils.toJson(map));
     }
 
     /**
