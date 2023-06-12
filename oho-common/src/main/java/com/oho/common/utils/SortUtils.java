@@ -9,7 +9,7 @@ import java.util.Arrays;
  * </p>
  * 必须实现Comparable接口
  *
- * @author MENGJIAO
+ * @author Alex
  * @createDate 2023 -05-05 10:17
  */
 public class SortUtils {
@@ -200,5 +200,4 @@ public class SortUtils {
         }
         return result;
     }
-
 }
